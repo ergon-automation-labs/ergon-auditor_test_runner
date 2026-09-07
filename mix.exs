@@ -12,8 +12,6 @@ defmodule BotArmyAuditorTestRunner.MixProject do
         auditor_test_runner_bot: [
           applications: [bot_army_auditor_test_runner: :permanent]
         ]
-          applications: [bot_army_auditor_test_runner: :permanent]
-        ]
       ]
     ]
   end
