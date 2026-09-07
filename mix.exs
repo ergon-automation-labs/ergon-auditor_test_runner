@@ -4,12 +4,14 @@ defmodule BotArmyAuditorTestRunner.MixProject do
   def project do
     [
       app: :bot_army_auditor_test_runner,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
-        test_runner_bot: [
+        auditor_test_runner_bot: [
+          applications: [bot_army_auditor_test_runner: :permanent]
+        ]
           applications: [bot_army_auditor_test_runner: :permanent]
         ]
       ]
