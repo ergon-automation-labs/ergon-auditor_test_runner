@@ -6,8 +6,8 @@ defmodule BotArmyAuditorTestRunner.NATS.Consumer do
   Uses standardized Reply format for request/reply patterns.
 
   All request/reply handlers should return responses using Reply helpers:
-  - BotArmyRuntime.NATS.Reply.ok(data) for success
-  - BotArmyRuntime.NATS.Reply.error(message, code) for errors
+  - BotArmyLibraryRuntime.NATS.Reply.ok(data) for success
+  - BotArmyLibraryRuntime.NATS.Reply.error(message, code) for errors
   """
 
   use GenServer
@@ -45,9 +45,9 @@ defmodule BotArmyAuditorTestRunner.NATS.Consumer do
 
   @impl true
   def handle_continue(:connect, state) do
-    case GenServer.call(BotArmyRuntime.NATS.Connection, :get_connection, 5000) do
+    case GenServer.call(BotArmyLibraryRuntime.NATS.Connection, :get_connection, 5000) do
       {:ok, conn} ->
-        BotArmyRuntime.NATS.Connection.subscribe_to_status()
+        BotArmyLibraryRuntime.NATS.Connection.subscribe_to_status()
         Logger.info("Connected to NATS, subscribing to topics")
 
         subscriptions =
@@ -68,7 +68,7 @@ defmodule BotArmyAuditorTestRunner.NATS.Consumer do
           |> Enum.filter(&(not is_nil(&1)))
 
         # Register subjects for runtime discovery
-        BotArmyRuntime.Registry.register("auditor_test_runner", @subjects, @version)
+        BotArmyLibraryRuntime.Registry.register("auditor_test_runner", @subjects, @version)
 
         Process.send_after(self(), :registry_heartbeat, @registry_heartbeat_ms)
 
@@ -92,7 +92,7 @@ defmodule BotArmyAuditorTestRunner.NATS.Consumer do
     # missed by registries that subscribe after it — the simultaneous-boot
     # race that left the whole fleet invisible to service discovery).
     if state.conn do
-      BotArmyRuntime.Registry.register("auditor_test_runner", @subjects, @version)
+      BotArmyLibraryRuntime.Registry.register("auditor_test_runner", @subjects, @version)
       Process.send_after(self(), :registry_heartbeat, @registry_heartbeat_ms)
     end
 
@@ -101,7 +101,7 @@ defmodule BotArmyAuditorTestRunner.NATS.Consumer do
 
   @impl true
   def handle_info({:msg, msg}, state) do
-    BotArmyRuntime.Tracing.with_consumer_span(msg.topic, Map.get(msg, :headers), fn ->
+    BotArmyLibraryRuntime.Tracing.with_consumer_span(msg.topic, Map.get(msg, :headers), fn ->
       Logger.debug("Received NATS message on subject: #{msg.topic}")
 
       # Handle request/reply patterns
@@ -115,7 +115,7 @@ defmodule BotArmyAuditorTestRunner.NATS.Consumer do
         end
       else
         # Handle pub/sub messages
-        case BotArmyCore.NATS.Decoder.decode(msg.body) do
+        case BotArmyLibraryCore.NATS.Decoder.decode(msg.body) do
           {:ok, decoded_message} ->
             route_message(decoded_message, msg.topic)
 
@@ -157,10 +157,10 @@ defmodule BotArmyAuditorTestRunner.NATS.Consumer do
   #   response =
   #     case get_tasks() do
   #       {:ok, tasks} ->
-  #         BotArmyRuntime.NATS.Reply.ok(%{"tasks" => tasks})
+  #         BotArmyLibraryRuntime.NATS.Reply.ok(%{"tasks" => tasks})
   #
   #       {:error, reason} ->
-  #         BotArmyRuntime.NATS.Reply.error(inspect(reason), :list_failed)
+  #         BotArmyLibraryRuntime.NATS.Reply.error(inspect(reason), :list_failed)
   #     end
   #
   #   if state.conn do
